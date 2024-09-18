@@ -1,0 +1,27 @@
+﻿<Window x:Class="TcpClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TcpClient"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <ListBox x:Name="List">
+            
+        </ListBox>
+        <StackPanel Grid.Column="1">
+            <TextBox x:Name="ProcessName" Height="30" FontSize="23" Margin="10"/>
+            <ComboBox SelectedIndex="0" x:Name="CBox" Height="30" FontSize="20" Margin="10"/>
+            <StackPanel Orientation="Horizontal">
+                
+            <Button x:Name="RefreshBtn" Height="30" Width="100" FontSize="23" Content="Refresh"  Margin="10" Click="RefreshBtn_Click"/>
+            <Button x:Name="RunBtn" Height="30" Width="100" Content="Run" FontSize="23" Margin="10"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
