@@ -5,86 +5,15 @@ using System.Text.Json;
 using TcpServer;
 
 
-var responsePort = 27002;
+var responsePort = 27000;
 var requestPort = 27001;
-var ip = IPAddress.Parse("192.168.1.8");
+var ip = IPAddress.Parse("10.1.18.7");
 var requestEp = new IPEndPoint(ip, requestPort);
 var responseEp = new IPEndPoint(ip, responsePort);
 using var server = new TcpClient(requestEp);
 using var listener = new TcpListener(requestPort);
 listener.Start();
 Console.WriteLine("Server started, waiting for connections...");
-/*
-while (true)
-{
-    try
-    {
-        var client = listener.AcceptTcpClient();
-        Console.WriteLine("Client connected.");
-        
-        _ = Task.Run(() =>
-         {
-             using var stream = client.GetStream();
-             using var sr = new StreamReader(stream);
-             using var sw = new StreamWriter(stream) { AutoFlush = true };
-
-             try
-             {
-                 var message = sr.ReadLine();
-                 if (message == "Refresh")
-                 {
-                     Console.WriteLine("Received 'Refresh' request.");
-
-                     var processes = Process.GetProcesses()
-                         .Select(p => new ProcessInfo
-                         {
-                             Id = p.Id,
-                             ProcessName = p.ProcessName,
-                             HandleCount = p.HandleCount,
-                             ThreadCount = p.Threads.Count,
-                             MachineName = p.MachineName
-                         })
-                         .OrderBy(p => p.ProcessName)
-                         .ToList();
-                     int i = 0;
-                     Console.WriteLine($"Sending processes to client.");
-                     while (i < processes.Count)
-                     {
-                         for (int k = 0; k < 10; k++)
-                         {
-                             var json = JsonSerializer.Serialize(processes[k]);
-                             sw.WriteLine(json);
-                             sw.Flush();
-                         }
-                         i += 10;
-                     }
-
-
-
-                     Console.WriteLine("Process list sent to client.");
-                 }
-             }
-
-             catch (Exception ex)
-             {
-                 Console.WriteLine($"Error: {ex.Message}");
-             }
-             finally
-             {
-                 client.Close();
-                 Console.WriteLine("Client connection closed.");
-             }
-         });
-    }
-    catch (SocketException se)
-    {
-        Console.WriteLine($"SocketException: {se.Message}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Unexpected error: {ex.Message}");
-    }
-}*/
 
 while (true)
 {
@@ -103,7 +32,7 @@ while (true)
                 server.Connect(responseEp);
                 if (!server.Connected)
                 {
-                    using var writer= new StreamWriter(server.GetStream());
+                    using var writer = new StreamWriter(server.GetStream());
                     var processes = Process.GetProcesses()
                         .Select(p => new ProcessInfo
                         {
@@ -115,16 +44,11 @@ while (true)
                         })
                         .OrderBy(p => p.ProcessName)
                         .ToList();
-                    int i = 0;
                     Console.WriteLine($"Sending processes to client.");
-                    while (i < processes.Count)
+                    for (int k = 0; k < processes.Count; k++)
                     {
-                        for (int k = 0; k < 10; k++)
-                        {
-                            var json = JsonSerializer.Serialize(processes[k]);
-                            writer.Write(json);
-                        }
-                        i += 10;
+                        var json = JsonSerializer.Serialize(processes[k]);
+                        writer.Write(json);
                     }
                 }
             }

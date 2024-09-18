@@ -25,12 +25,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void RefreshBtn_Click(object sender, RoutedEventArgs e)
     {
         var responsePort = 27001;
-        var requestPort = 27002;
-        var ip = IPAddress.Parse("192.168.1.8");
+        var requestPort = 27000;
+        var ip = IPAddress.Parse("10.1.18.7");
         var requestEp = new IPEndPoint(ip, requestPort);
         var responseEp = new IPEndPoint(ip, responsePort);
         using var client = new System.Net.Sockets.TcpClient();
-        using var listener = new TcpListener(requestPort);
+        using var listener = new TcpListener(responseEp);
 
         /*   using (System.Net.Sockets.TcpClient client = new())
            {
@@ -80,48 +80,80 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                    MessageBox.Show("Client is not connected.");
                }
            }*/
-
-        try
-        {
-            client.Connect(responseEp);
-            using (var sw = new StreamWriter(client.GetStream()))
-            {
-                sw.WriteLine("Refresh");
-                sw.Flush();
-            }
-            listener.Start();
-            var server = listener.AcceptTcpClient();
-            using var reader = server.GetStream();
-            Processes = new();
-            using (var sr = new StreamReader(server.GetStream()))
-            {
-                while (true)
+        /*
+                try
                 {
-                    try
+                    client.Connect(responseEp);
+                    using (var sw = new StreamWriter(client.GetStream()))
                     {
-                        var response = sr.ReadLine();
-                        if (!string.IsNullOrEmpty(response))
-                        {
-                            var json = JsonSerializer.Deserialize<ProcessInfo>(response);
-                            Processes.Add(json);
-                        }
-                        else
-                        {
-                            MessageBox.Show("No response from the server.");
-                        }
+                        sw.WriteLine("Refresh");
+                        sw.Flush();
                     }
+                    listener.Start();
+                    var server = listener.AcceptTcpClient();
+                    using var reader = server.GetStream();
+                    Processes = new();
+                    using var sr = new StreamReader(server.GetStream());
+                    while (true)
+                        try
+                        {
+                            var response = sr.ReadLine();
+                            if (!string.IsNullOrEmpty(response))
+                            {
+                                var json = JsonSerializer.Deserialize<ProcessInfo>(response);
+                                Processes.Add(json);
+                            }
+                            else
+                                MessageBox.Show("No response from the server.");
+                        }
 
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
                 }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }*/
+        while (true)
+            try
+            {
+                client.Connect(requestEp);
+                using (var sw = new StreamWriter(client.GetStream()))
+                {
+                    sw.WriteLine("Refresh");
+                    sw.Flush();
+                }
+                listener.Start();
+                _ = Task.Run(() =>
+                {
+                    while (true)
+                    {
+                        var responseClient = listener.AcceptTcpClient();
+                        try
+                        {
+                            var stream = responseClient.GetStream();
+                            var sr = new StreamReader(stream);
+                            
+                            while (true)
+                            {
+                                
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            MessageBox.Show(exception.Message);
+                        }
+                    }
+                });
+
             }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message);
-        }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
     }
     public event PropertyChangedEventHandler? PropertyChanged;
     public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
