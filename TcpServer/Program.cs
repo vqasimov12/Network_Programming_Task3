@@ -4,17 +4,14 @@ using System.Net.Sockets;
 using System.Text.Json;
 using TcpServer;
 
-
-var responsePort = 27000;
-var requestPort = 27001;
-var ip = IPAddress.Parse("10.1.18.7");
+var responsePort = 27001;
+var requestPort = 27000;
+var ip = IPAddress.Parse("192.168.1.8");
 var requestEp = new IPEndPoint(ip, requestPort);
 var responseEp = new IPEndPoint(ip, responsePort);
-using var server = new TcpClient(requestEp);
-using var listener = new TcpListener(requestPort);
+using var listener = new TcpListener(requestEp);
 listener.Start();
 Console.WriteLine("Server started, waiting for connections...");
-
 while (true)
 {
     var client = listener.AcceptTcpClient();
@@ -29,28 +26,25 @@ while (true)
             if (message == "Refresh")
             {
                 Console.WriteLine("Received 'Refresh' request.");
-                server.Connect(responseEp);
-                if (!server.Connected)
-                {
-                    using var writer = new StreamWriter(server.GetStream());
-                    var processes = Process.GetProcesses()
-                        .Select(p => new ProcessInfo
-                        {
-                            Id = p.Id,
-                            ProcessName = p.ProcessName,
-                            HandleCount = p.HandleCount,
-                            ThreadCount = p.Threads.Count,
-                            MachineName = p.MachineName
-                        })
-                        .OrderBy(p => p.ProcessName)
-                        .ToList();
-                    Console.WriteLine($"Sending processes to client.");
-                    for (int k = 0; k < processes.Count; k++)
+                using var responseClient = new TcpClient();
+                responseClient.Connect(responseEp);
+                using var writer = new StreamWriter(responseClient.GetStream());
+                var processes = Process.GetProcesses()
+                    .Select(p => new ProcessInfo
                     {
-                        var json = JsonSerializer.Serialize(processes[k]);
-                        writer.Write(json);
-                    }
+                        Id = p.Id,
+                        ProcessName = p.ProcessName,
+                    })
+                    .OrderBy(p => p.ProcessName)
+                    .ToList();
+                Console.WriteLine($"Sending {processes.Count} processes to client.");
+                foreach (var process in processes)
+                {
+                    var json = JsonSerializer.Serialize(process);
+                    writer.WriteLine(json);
+                    writer.Flush();
                 }
+                Console.WriteLine("Finished sending processes.");
             }
         }
         catch (Exception ex)

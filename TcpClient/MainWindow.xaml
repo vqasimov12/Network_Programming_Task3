@@ -11,7 +11,7 @@
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <ListBox x:Name="List">
+        <ListBox x:Name="List" ItemsSource="{Binding Processes}">
             
         </ListBox>
         <StackPanel Grid.Column="1">
