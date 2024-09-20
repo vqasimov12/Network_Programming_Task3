@@ -30,23 +30,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             using var client = new System.Net.Sockets.TcpClient();
             _ = client.ConnectAsync(requestEp.Address, requestEp.Port);
+            var command = new Command() { CommandType = "Refresh" };
+            var json = JsonSerializer.Serialize(command);
             using (var writer = new StreamWriter(client.GetStream()))
             {
-                writer.WriteLine("Refresh");
+                writer.WriteLine(json);
                 writer.Flush();
             }
             using (var listener = new TcpListener(responseEp))
             {
                 listener.Start();
-                using (var responseClient = await listener.AcceptTcpClientAsync())
+                using (var responseClient = listener.AcceptTcpClient())
                 {
                     using var reader = new StreamReader(responseClient.GetStream());
-                    var processes = new List<ProcessInfo>();
                     string line;
-                    while ((line = await reader.ReadLineAsync()) != null)
+                    Processes.Clear();
+                    while ((line = reader.ReadLine()) != null)
                     {
                         var processInfo = JsonSerializer.Deserialize<ProcessInfo>(line);
-                        Processes.Add(processInfo);
+                        Processes.Add(processInfo!);
                     }
                 }
                 listener.Stop();
@@ -57,9 +59,52 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             MessageBox.Show(ex.Message);
         }
     }
+
+    private void RunBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var command = new Command();
+        if (CBox.SelectedIndex == 0)
+        {
+            var process = List.SelectedItem as ProcessInfo;
+            if (process is null) return;
+            command.ProcessId = process.Id;
+            command.CommandType = "Kill";
+        }
+        else
+        {
+            if (ProcessName.Text == "") return;
+            command.ProcessName = ProcessName.Text.ToString();
+            command.CommandType = "Start";
+        }
+        var responsePort = 27001;
+        var requestPort = 27000;
+        var ip = IPAddress.Parse("192.168.1.8");
+        var requestEp = new IPEndPoint(ip, requestPort);
+        var responseEp = new IPEndPoint(ip, responsePort);
+        try
+        {
+            using var client = new System.Net.Sockets.TcpClient();
+            _ = client.ConnectAsync(requestEp.Address, requestEp.Port);
+            var json = JsonSerializer.Serialize(command);
+            using (var writer = new StreamWriter(client.GetStream()))
+            {
+                writer.WriteLine(json);
+                writer.Flush();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
+        CBox.SelectedIndex = 0;
+        ProcessName.Text = "";
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+
 }

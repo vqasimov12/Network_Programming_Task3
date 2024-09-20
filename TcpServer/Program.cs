@@ -22,8 +22,10 @@ while (true)
         using var reader = new StreamReader(stream);
         try
         {
-            var message = reader.ReadLine();
-            if (message == "Refresh")
+            var json = reader.ReadLine();
+            var command = JsonSerializer.Deserialize<Command>(json);
+          
+            if (command.CommandType == "Refresh")
             {
                 Console.WriteLine("Received 'Refresh' request.");
                 using var responseClient = new TcpClient();
@@ -35,21 +37,38 @@ while (true)
                         Id = p.Id,
                         ProcessName = p.ProcessName,
                     })
-                    .OrderBy(p => p.ProcessName)
+                    .OrderBy(p => p.ProcessName).OrderBy(p => p.ProcessName)
                     .ToList();
                 Console.WriteLine($"Sending {processes.Count} processes to client.");
                 foreach (var process in processes)
                 {
-                    var json = JsonSerializer.Serialize(process);
-                    writer.WriteLine(json);
+                    var jsontext = JsonSerializer.Serialize(process);
+                    writer.WriteLine(jsontext);
                     writer.Flush();
                 }
                 Console.WriteLine("Finished sending processes.");
             }
+
+            else if (command.CommandType == "Start")
+            {
+                Console.WriteLine("Received 'Start' request.");
+                Process.Start(command.ProcessName);
+                Console.WriteLine("Start Process executed");
+            }
+         
+            else if (command.CommandType == "Kill")
+            {
+                Console.WriteLine("Received 'Kill' request.");
+                var p = Process.GetProcessById(command.ProcessId);
+                p?.Kill();
+                Console.WriteLine("Kill Process executed");
+            }
+      
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
         }
+        finally { client.Close(); }
     });
 }
