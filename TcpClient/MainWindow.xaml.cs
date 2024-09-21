@@ -18,8 +18,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         CBox.Items.Add("Kill");
         CBox.Items.Add("Start");
         DataContext = this;
+        RefreshBtn_Click(null, null);
+
     }
-    private async void RefreshBtn_Click(object sender, RoutedEventArgs e)
+    private void RefreshBtn_Click(object sender, RoutedEventArgs e)
     {
         var responsePort = 27001;
         var requestPort = 27000;
@@ -29,7 +31,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             using var client = new System.Net.Sockets.TcpClient();
-            _ = client.ConnectAsync(requestEp.Address, requestEp.Port);
+            client.Connect(requestEp.Address, requestEp.Port);
             var command = new Command() { CommandType = "Refresh" };
             var json = JsonSerializer.Serialize(command);
             using (var writer = new StreamWriter(client.GetStream()))
@@ -84,7 +86,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             using var client = new System.Net.Sockets.TcpClient();
-            _ = client.ConnectAsync(requestEp.Address, requestEp.Port);
+            client.Connect(requestEp.Address, requestEp.Port);
             var json = JsonSerializer.Serialize(command);
             using (var writer = new StreamWriter(client.GetStream()))
             {
@@ -98,6 +100,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         CBox.SelectedIndex = 0;
         ProcessName.Text = "";
+        RefreshBtn_Click(null, null);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
